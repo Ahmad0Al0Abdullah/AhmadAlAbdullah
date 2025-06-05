@@ -10,6 +10,9 @@
     --body-font: 'Open Sans', sans-serif;
     --card-bg: #112240; /* Card background */
     --border-color: #233554;
+    --warning-bg: #ffc107; /* Warning yellow */
+    --warning-text: #333333; 
+    --header-height: 80px; /* Define header height as a variable */
 }
 
 * {
@@ -36,6 +39,49 @@ body {
     padding: 0 20px;
 }
 
+/* Mobile Warning Banner */
+.mobile-warning-banner {
+    display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    text-align: center;
+    padding: 12px 20px; /* Increased padding */
+    z-index: 2000; /* Ensure it's above other content */
+    font-size: 0.9rem;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.25);
+    align-items: center; /* For vertical alignment of button if needed */
+    justify-content: center; /* For horizontal alignment of content */
+}
+
+.mobile-warning-banner.show-warning {
+    display: flex; /* Use flex to better align text and button */
+}
+
+#close-warning-btn {
+    background: none;
+    border: 1px solid transparent; /* Add transparent border for consistent sizing on focus */
+    color: var(--warning-text);
+    font-size: 1.4rem; /* Slightly larger for easier tapping */
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 15px;
+    line-height: 1;
+    padding: 0 8px; /* Added some padding */
+    border-radius: 4px; /* Optional: for better visual on focus */
+}
+#close-warning-btn:hover {
+    opacity: 0.8;
+}
+#close-warning-btn:focus {
+    outline: 2px solid var(--warning-text); /* Accessibility: visible focus */
+    outline-offset: 2px;
+}
+
+
 /* Header & Navigation */
 header {
     background-color: rgba(10, 25, 47, 0.85); /* Dark Navy with transparency */
@@ -48,12 +94,16 @@ header {
     width: 100%;
     z-index: 1000;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    height: var(--header-height); /* Set header height */
+    display: flex; /* Added for vertical centering of items if needed */
+    align-items: center; /* Added for vertical centering */
 }
 
 header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%; /* Ensure container takes full width for alignment */
 }
 
 .logo {
@@ -98,13 +148,14 @@ nav ul li a.active-link {
 
 /* Main Content Sections */
 main {
-    padding-top: 80px; /* Adjust based on header height */
+    padding-top: var(--header-height); /* Use variable for header height */
 }
 
 .page {
     display: none; /* Hidden by default, shown by JS */
     padding: 4rem 0;
-    min-height: calc(100vh - 80px - 70px); /* Full height minus header and approximate footer height */
+    min-height: calc(100vh - var(--header-height) - 70px); /* Full height minus header and approximate footer height */
+    scroll-margin-top: calc(var(--header-height) + 20px); /* <<< SCROLL FIX: Offset for fixed header + some breathing room */
 }
 
 .page.active {
@@ -143,8 +194,9 @@ p {
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: calc(100vh - 80px); /* Full viewport height minus header */
+    min-height: calc(100vh - var(--header-height)); /* Full viewport height minus header */
     background: linear-gradient(rgba(10, 25, 47, 0.7), rgba(10, 25, 47, 0.9)), url('https://placehold.co/1200x800/0A192F/112240?text=Cybersecurity+Background') no-repeat center center/cover; /* Replace with actual image */
+    scroll-margin-top: 0; /* Home usually doesn't need this offset as it's the top */
 }
 
 #home .hero-content {
@@ -357,6 +409,8 @@ footer {
     background-color: var(--secondary-color);
     color: var(--light-text-color);
     margin-top: 2rem; /* Ensure space before footer */
+    position: relative; /* To ensure it's not overlapped by fixed warning banner */
+    z-index: 1; /* Lower z-index than warning banner */
 }
 footer p {
     margin-bottom: 0;
@@ -370,7 +424,7 @@ footer p {
         flex-direction: column;
         width: 100%;
         position: absolute;
-        top: 65px; /* Adjust based on header height */
+        top: 65px; /* Adjust based on header height, if header height changes, update this too */
         left: 0;
         background-color: var(--secondary-color);
         padding: 1rem 0;
@@ -409,6 +463,15 @@ footer p {
         max-width: 200px;
         margin-bottom: 1rem;
     }
+
+    /* Adjust main content padding if warning banner is shown */
+    body.mobile-warning-active main {
+      padding-bottom: 60px; /* Approximate height of the warning banner */
+    }
+    body.mobile-warning-active footer {
+      margin-bottom: 50px; /* Ensure footer is above fixed warning */
+    }
+
 }
 
 /* Utility Classes */
