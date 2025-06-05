@@ -6,6 +6,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroBtnSkills = document.querySelector('.hero-btn-skills');
     const heroBtnContact = document.querySelector('.hero-btn-contact');
 
+    // Mobile Warning Banner Elements
+    const mobileWarningBanner = document.getElementById('mobile-warning-banner');
+    const closeWarningBtn = document.getElementById('close-warning-btn');
+    const warningDismissedKey = 'mobileWarningDismissed_AhmadIT'; // Unique key for localStorage
+
+    // Function to check if warning was dismissed previously
+    function wasWarningDismissed() {
+        try {
+            return localStorage.getItem(warningDismissedKey) === 'true';
+        } catch (e) {
+            // localStorage might be disabled (e.g., private browsing)
+            console.warn('localStorage access denied. Mobile warning may reappear.');
+            return false;
+        }
+    }
+
+    // Function to show the warning
+    function showMobileWarning() {
+        if (mobileWarningBanner) {
+            mobileWarningBanner.classList.add('show-warning');
+            // Optional: Add a class to body to adjust padding if needed
+            // document.body.classList.add('mobile-warning-active');
+        }
+    }
+
+    // Function to hide the warning and remember dismissal
+    function hideMobileWarning() {
+        if (mobileWarningBanner) {
+            mobileWarningBanner.classList.remove('show-warning');
+            // document.body.classList.remove('mobile-warning-active');
+        }
+        try {
+            localStorage.setItem(warningDismissedKey, 'true');
+        } catch (e) {
+            // localStorage might be disabled
+        }
+    }
+
+    // Check screen width to determine if it's likely a mobile device and if warning was dismissed
+    if (window.innerWidth < 768 && !wasWarningDismissed()) {
+        showMobileWarning();
+    }
+
+    // Add event listener for the close button on the warning banner
+    if (closeWarningBtn) {
+        closeWarningBtn.addEventListener('click', hideMobileWarning);
+    }
+
     // Function to show a page and update active links
     function showPage(pageId, clickedLinkElement) {
         // Hide all pages
@@ -20,8 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update active link in the navigation
         navLinks.forEach(link => link.classList.remove('active-link'));
         
-        // Find the actual navigation link corresponding to the pageId and activate it
-        // This handles cases where the click might come from a non-nav-link button (like hero buttons)
         const correspondingNavLink = document.querySelector(`.nav-link[href="#${pageId}"]`);
         if (correspondingNavLink) {
             correspondingNavLink.classList.add('active-link');
@@ -29,33 +75,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // If mobile menu is open, close it
         const mainNavUl = document.getElementById('main-nav').querySelector('ul');
-        if (mainNavUl.classList.contains('show')) {
+        if (mainNavUl && mainNavUl.classList.contains('show')) {
             mainNavUl.classList.remove('show');
         }
 
-        // Scroll to top of page content (or to the section itself if it's not the home page)
-        if (pageId === 'home') {
-            window.scrollTo(0, 0);
-        } else if (targetPage) {
-            // For other pages, we might want to scroll to the top of the main content area
-            // or to the section itself. For single-page apps, scrolling to the section is typical.
-            // The current setup with fixed header means scrolling to the section top is fine.
-            // If sections were much shorter, you might adjust.
-            // For now, default browser anchor behavior + JS page switching should be okay.
-            // If specific scroll behavior is needed beyond default anchor, it can be added here.
-            // The current `window.scrollTo(0,0)` will take user to top of document,
-            // which is fine as the fixed header means the section starts below it.
-             window.scrollTo(0, 0); // Or targetPage.offsetTop - headerHeight if more precise scroll needed
-        }
+        // --- Removed explicit window.scrollTo(0,0) ---
+        // Let the browser's default anchor scrolling (modified by CSS scroll-margin-top) handle the scroll position.
+        // If the pageId is the target of an anchor link click, the browser will scroll to it.
+        // If not (e.g., initial page load without a hash), no specific scroll is forced here,
+        // which is usually fine as the page loads at the top.
     }
 
     // Add click listeners to navigation links
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            // e.preventDefault(); // Prevent default anchor jump if you want full JS control
-                               // But for this setup, default behavior is fine as href matches ID
+            // We don't need to preventDefault if the href is an anchor 
+            // and we want the browser's native scroll behavior (modified by CSS)
+            // e.preventDefault(); 
             const pageId = link.getAttribute('href').substring(1);
-            showPage(pageId, link); // 'link' is the clicked navigation link element
+            showPage(pageId, link); 
         });
     });
 
@@ -64,9 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
         heroBtnSkills.addEventListener('click', (e) => {
             // e.preventDefault();
             const pageId = heroBtnSkills.getAttribute('href').substring(1);
-            // Pass the corresponding nav link for active state highlighting
             const targetNavLink = document.querySelector(`.nav-link[href="#${pageId}"]`);
             showPage(pageId, targetNavLink);
+            // Manually trigger scroll for buttons if not handled by href alone after JS page switch
+            document.getElementById(pageId)?.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
@@ -74,9 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
         heroBtnContact.addEventListener('click', (e) => {
             // e.preventDefault();
             const pageId = heroBtnContact.getAttribute('href').substring(1);
-            // Pass the corresponding nav link for active state highlighting
             const targetNavLink = document.querySelector(`.nav-link[href="#${pageId}"]`);
             showPage(pageId, targetNavLink);
+            // Manually trigger scroll for buttons if not handled by href alone after JS page switch
+            document.getElementById(pageId)?.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
@@ -97,8 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize: Show page based on URL hash or default to 'home'
-    const initialPageId = window.location.hash ? window.location.hash.substring(1) : 'home';
-    const initialLinkElement = document.querySelector(`.nav-link[href="#${initialPageId}"]`);
-    // Ensure the function is called to display the initial page correctly
-    showPage(initialPageId, initialLinkElement);
+    // Also, handle initial scroll if a hash is present
+    function initializePage() {
+        const initialPageId = window.location.hash ? window.location.hash.substring(1) : 'home';
+        const initialLinkElement = document.querySelector(`.nav-link[href="#${initialPageId}"]`);
+        showPage(initialPageId, initialLinkElement);
+
+        // If there's a hash in the URL on initial load, try to scroll to it respecting the offset
+        if (window.location.hash && document.getElementById(initialPageId)) {
+            // Small timeout to ensure the page structure is fully ready for scrollIntoView
+            setTimeout(() => {
+                document.getElementById(initialPageId).scrollIntoView({ behavior: 'auto' }); // 'auto' for initial load
+            }, 0);
+        }
+    }
+    initializePage();
+
 });
